@@ -67,8 +67,9 @@
 
   /* Profil maman / papa */
   body[data-profil="papa"] .pour-maman, body:not([data-profil="papa"]) .pour-papa { display:none; }
-  .profil { position:absolute; top:calc(env(safe-area-inset-top) + 12px); right:16px; background:var(--sheet); border:1px solid var(--line);
-    border-radius:20px; padding:5px 12px; font:inherit; font-size:13px; color:var(--text); cursor:pointer; }
+  .profil { position:absolute; top:calc(env(safe-area-inset-top) + 8px); right:12px; z-index:5; width:38px; height:38px; padding:0;
+    display:grid; place-items:center; background:var(--sheet); border:1px solid var(--line); border-radius:50%;
+    font-size:19px; line-height:1; cursor:pointer; box-shadow:0 2px 8px rgba(120,60,80,.08); }
   .choix { position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:24px;
     background:color-mix(in srgb, var(--bg) 70%, transparent); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
   .choix[hidden] { display:none; }
@@ -171,8 +172,8 @@
 </div>
 
 <main>
+<button class="profil" id="profil"></button>
 <div class="onglet" id="t-semaine" role="tabpanel" aria-labelledby="b-semaine">
-  <button class="profil" id="profil" aria-label="Changer de profil"></button>
   <p class="jour" id="jour"></p>
 
   <div class="hero">
@@ -570,6 +571,10 @@ for (const id of ["garcons", "filles"]) {
 // Mot pour la future maman : s'affiche une seule fois, la première fois que « Future maman » est choisi.
 // Laisser vide pour ne rien afficher. Les retours à la ligne sont conservés.
 const MOT_POUR_ELLE = `
+Même si ce n'est pas grand chose par rapport à ce que tu fais déjà pour ce nouvel enfant, c'est ma façon à moi de participer un peu plus.
+J'espère que cette petite attention saura te faire plaisir, et pourquoi pas t'être utile !
+Merci pour tout ce que tu fais pour cette famille.
+Je t'aime 💗
 `;
 
 const lire = cle => { try { return localStorage.getItem(cle); } catch { return null; } };
@@ -583,10 +588,11 @@ const motSiBesoin = () => {
 $("mot-fermer").onclick = () => { $("mot").hidden = true; ecrire("mot-lu", "1"); };
 
 // Profil maman / papa, retenu sur ce téléphone (choisi à la première ouverture)
-const PROFILS = { maman: "🤰 Maman", papa: "👨 Papa" };
+const PROFILS = { maman: "🤰", papa: "👨" };
 const profil = nom => {
   document.body.dataset.profil = nom;
   $("profil").textContent = PROFILS[nom];
+  $("profil").setAttribute("aria-label", `Profil ${nom}, changer`);
   $("choix").hidden = true;
   ecrire("profil", nom);
   motSiBesoin();
@@ -594,7 +600,8 @@ const profil = nom => {
 const enregistre = lire("profil");
 if (PROFILS[enregistre]) profil(enregistre); else $("choix").hidden = false;
 $("profil").onclick = () => $("choix").hidden = false;
-document.querySelectorAll("[data-profil]").forEach(b => b.onclick = () => profil(b.dataset.profil));
+// Cibler les boutons du choix seulement : <body> porte aussi data-profil
+document.querySelectorAll("#choix button[data-profil]").forEach(b => b.onclick = () => profil(b.dataset.profil));
 
 // Onglets (l'onglet ouvert est gardé dans l'adresse : #parcours, #prenoms)
 document.querySelectorAll(".rappel").forEach(p => p.textContent = `${sa} SA` + (j ? ` + ${j} j` : "") + ` · J-${reste}`);
