@@ -1,0 +1,9 @@
+{
+  "name": "Suivi grossesse",
+  "short_name": "Grossesse",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fdf2f4",
+  "theme_color": "#fdf2f4",
+  "icons": [{ "src": "icon.png", "sizes": "180x180", "type": "image/png" }]
+}

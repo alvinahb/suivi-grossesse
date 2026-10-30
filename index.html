@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Suivi grossesse</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Grossesse">
+<meta name="theme-color" content="#fdf2f4">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root { --bg:#fdf2f4; --card:#fff; --text:#3a2a30; --muted:#8a7078; --accent:#d9668a; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#1e1619; --card:#2b2024; --text:#f5e9ed; --muted:#b39aa3; --accent:#f08cab; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+    font-family:-apple-system, system-ui, sans-serif; text-align:center;
+    padding: calc(env(safe-area-inset-top) + 32px) 16px calc(env(safe-area-inset-bottom) + 24px);
+  }
+  .card { background:var(--card); border-radius:24px; padding:28px 20px; max-width:420px; margin:0 auto 16px; box-shadow:0 4px 20px rgba(0,0,0,.06); }
+  .label { color:var(--muted); font-size:15px; margin:0 0 6px; }
+  .big { font-size:44px; font-weight:700; margin:0; color:var(--accent); }
+  .emoji { font-size:88px; line-height:1; margin:8px 0; }
+  .fruit { font-size:24px; font-weight:600; margin:4px 0 0; }
+  .size { font-size:20px; margin:12px 0 0; }
+  .note { color:var(--muted); font-size:13px; margin:8px 0 0; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <p class="label">Aujourd'hui</p>
+    <p class="big" id="sa">–</p>
+    <p class="note" id="total"></p>
+  </div>
+  <div class="card">
+    <p class="label">Bébé est grand comme</p>
+    <div class="emoji" id="emoji"></div>
+    <p class="fruit" id="fruit"></p>
+    <p class="size" id="size"></p>
+    <p class="note" id="mesure"></p>
+  </div>
+  <div class="card">
+    <p class="label">Terme prévu</p>
+    <p class="fruit" id="dpa"></p>
+  </div>
+
+<script>
+// Premier jour des dernières règles (date d'aménorrhée)
+const DDR = [2026, 9, 7]; // année, mois (1-12), jour
+
+// Taille moyenne en début de semaine d'aménorrhée (SA), en cm.
+// Jusqu'à 19 SA : longueur tête-fesses ; à partir de 20 SA : tête-talons.
+const SEMAINES = {
+  4:  [0.1,  "une graine de pavot", "🌱"],
+  5:  [0.2,  "une graine de sésame", "🌱"],
+  6:  [0.4,  "une lentille", "🫘"],
+  7:  [1.0,  "une myrtille", "🫐"],
+  8:  [1.6,  "une framboise", "🍇"],
+  9:  [2.3,  "une cerise", "🍒"],
+  10: [3.1,  "une fraise", "🍓"],
+  11: [4.1,  "une figue", "🟣"],
+  12: [5.4,  "un citron vert", "🍋‍🟩"],
+  13: [7.4,  "un kiwi", "🥝"],
+  14: [8.7,  "un citron", "🍋"],
+  15: [10.1, "une pomme", "🍎"],
+  16: [11.6, "un avocat", "🥑"],
+  17: [13.0, "une grenade", "🔴"],
+  18: [14.2, "un poivron", "🫑"],
+  19: [15.3, "une mangue", "🥭"],
+  20: [25.6, "une banane", "🍌"],
+  21: [26.7, "une carotte", "🥕"],
+  22: [27.8, "une papaye", "🧡"],
+  23: [28.9, "un pamplemousse", "🍊"],
+  24: [30.0, "un épi de maïs", "🌽"],
+  25: [34.6, "un chou-fleur", "🥦"],
+  26: [35.6, "une laitue", "🥬"],
+  27: [36.6, "un chou", "🥬"],
+  28: [37.6, "une aubergine", "🍆"],
+  29: [38.6, "une courge butternut", "🎃"],
+  30: [39.9, "un concombre", "🥒"],
+  31: [41.1, "une noix de coco", "🥥"],
+  32: [42.4, "une courge spaghetti", "🎃"],
+  33: [43.7, "un ananas", "🍍"],
+  34: [45.0, "un melon", "🍈"],
+  35: [46.2, "un melon miel", "🍈"],
+  36: [47.4, "une laitue romaine", "🥬"],
+  37: [48.6, "une blette", "🥬"],
+  38: [49.8, "un poireau", "🥬"],
+  39: [50.7, "une petite pastèque", "🍉"],
+  40: [51.2, "une citrouille", "🎃"],
+  41: [51.5, "une pastèque", "🍉"],
+};
+
+const JOUR = 86400000;
+// Dates en UTC pour éviter les décalages d'heure d'été
+const utc = d => Date.UTC(d[0], d[1] - 1, d[2]);
+
+// ?date=AAAA-MM-JJ permet de simuler un autre jour
+const param = new URLSearchParams(location.search).get("date");
+const now = new Date();
+const today = param ? param.split("-").map(Number) : [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+
+const jours = Math.round((utc(today) - utc(DDR)) / JOUR);
+const sa = Math.floor(jours / 7), j = jours % 7;
+
+document.getElementById("sa").textContent = `${sa} SA` + (j ? ` + ${j} j` : "");
+document.getElementById("total").textContent = `${jours} jours d'aménorrhée · ${Math.max(0, 280 - jours)} jours avant le terme`;
+
+const s = Math.min(Math.max(sa, 4), 41);
+const [cm, fruit, emoji] = SEMAINES[s];
+// Interpolation linéaire vers la semaine suivante (sauf au passage tête-fesses → tête-talons)
+const suivante = SEMAINES[s + 1];
+const taille = (sa >= 4 && sa < 41 && s !== 19) ? cm + (suivante[0] - cm) * j / 7 : cm;
+
+document.getElementById("emoji").textContent = emoji;
+document.getElementById("fruit").textContent = fruit;
+document.getElementById("size").textContent = taille < 1
+  ? `≈ ${(taille * 10).toFixed(0)} mm`
+  : `≈ ${taille.toFixed(1).replace(".", ",")} cm`;
+document.getElementById("mesure").textContent = s < 20 ? "longueur tête-fesses" : "longueur tête-talons";
+
+const dpa = new Date(utc(DDR) + 280 * JOUR);
+document.getElementById("dpa").textContent = dpa.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+</script>
+</body>
+</html>
