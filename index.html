@@ -141,7 +141,10 @@
   .prenoms li { background:var(--soft); border-radius:20px; padding:7px 14px; font-size:16px; }
   .prenoms li.vide { background:none; color:var(--muted); padding-left:0; }
 
-  .source { font-size:11px; color:var(--muted); text-align:center; margin:36px 0 0; line-height:1.5; }
+  .source { margin:40px 0 0; padding-top:18px; border-top:1px solid var(--line); text-align:center; color:var(--muted); font-size:12px; line-height:1.6; }
+  .source p { margin:0; text-wrap:balance; }
+  .source p + p { margin-top:8px; font-size:11px; letter-spacing:.02em; }
+  .source span { white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -202,8 +205,10 @@
       </div>
     </section>
 
-    <p class="source">Repères moyens, à titre indicatif. Le calendrier de votre sage-femme ou médecin fait foi.<br>
-      Sources : ameli.fr, service-public.fr, HAS, CNGOF, ANSM ; poids : courbes OMS (2017).</p>
+    <footer class="source">
+      <p>Repères moyens, donnés à titre indicatif.<br>Seul le suivi par la sage-femme ou le médecin fait foi.</p>
+      <p><span>ameli.fr</span> · <span>service-public.fr</span> · <span>Code du travail</span> · <span>HAS</span> · <span>CNGOF</span> · <span>ANSM</span> · <span>OMS</span> · <span>maternités et CHU</span></p>
+    </footer>
   </div>
 </div>
 
@@ -220,6 +225,11 @@
       <button class="voir" id="voir" hidden></button>
       <ul class="frise" id="rdv"></ul>
     </section>
+
+    <footer class="source">
+      <p>Repères moyens, donnés à titre indicatif.<br>Seul le suivi par la sage-femme ou le médecin fait foi.</p>
+      <p><span>ameli.fr</span> · <span>service-public.fr</span> · <span>Code du travail</span> · <span>HAS</span> · <span>CNGOF</span> · <span>ANSM</span> · <span>OMS</span> · <span>maternités et CHU</span></p>
+    </footer>
   </div>
 </div>
 
