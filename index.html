@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Grossesse">
 <meta name="theme-color" content="#fbeee9">
+<meta name="robots" content="noindex, nofollow">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
 <style>
@@ -75,6 +76,8 @@
     box-shadow:0 12px 40px rgba(120,60,80,.18); }
   .choix h1 { font-family:var(--serif); font-weight:600; font-size:28px; margin:6px 0 4px; }
   .choix p { color:var(--muted); font-size:15px; margin:0 0 20px; }
+  .choix .lettre { font-family:var(--serif); font-size:18px; line-height:1.55; color:var(--text); text-align:left; white-space:pre-line;
+    max-height:55vh; overflow-y:auto; }
   .choix button { display:block; width:100%; margin-top:10px; padding:16px; border-radius:18px; border:2px solid var(--line);
     background:var(--bg); font:inherit; font-size:18px; font-weight:700; color:var(--text); cursor:pointer; }
   .intro { color:var(--muted); font-size:15px; margin:-6px 0 8px; }
@@ -148,6 +151,15 @@
 </style>
 </head>
 <body>
+<div class="choix" id="mot" hidden>
+  <div class="boite" role="dialog" aria-modal="true" aria-labelledby="mot-titre">
+    <p class="jour">Pour toi</p>
+    <h1 id="mot-titre">❤️</h1>
+    <p class="lettre" id="mot-texte"></p>
+    <button id="mot-fermer">Découvrir l'appli</button>
+  </div>
+</div>
+
 <div class="choix" id="choix" hidden>
   <div class="boite" role="dialog" aria-modal="true" aria-labelledby="choix-titre">
     <p class="jour">Bienvenue</p>
@@ -555,16 +567,31 @@ for (const id of ["garcons", "filles"]) {
     });
 }
 
+// Mot pour la future maman : s'affiche une seule fois, la première fois que « Future maman » est choisi.
+// Laisser vide pour ne rien afficher. Les retours à la ligne sont conservés.
+const MOT_POUR_ELLE = `
+`;
+
+const lire = cle => { try { return localStorage.getItem(cle); } catch { return null; } };
+const ecrire = (cle, val) => { try { localStorage.setItem(cle, val); } catch {} };
+
+const motSiBesoin = () => {
+  if (document.body.dataset.profil !== "maman" || !MOT_POUR_ELLE.trim() || lire("mot-lu")) return;
+  $("mot-texte").textContent = MOT_POUR_ELLE.trim();
+  $("mot").hidden = false;
+};
+$("mot-fermer").onclick = () => { $("mot").hidden = true; ecrire("mot-lu", "1"); };
+
 // Profil maman / papa, retenu sur ce téléphone (choisi à la première ouverture)
 const PROFILS = { maman: "🤰 Maman", papa: "👨 Papa" };
 const profil = nom => {
   document.body.dataset.profil = nom;
   $("profil").textContent = PROFILS[nom];
   $("choix").hidden = true;
-  try { localStorage.setItem("profil", nom); } catch {}
+  ecrire("profil", nom);
+  motSiBesoin();
 };
-let enregistre = null;
-try { enregistre = localStorage.getItem("profil"); } catch {}
+const enregistre = lire("profil");
 if (PROFILS[enregistre]) profil(enregistre); else $("choix").hidden = false;
 $("profil").onclick = () => $("choix").hidden = false;
 document.querySelectorAll("[data-profil]").forEach(b => b.onclick = () => profil(b.dataset.profil));
