@@ -86,6 +86,22 @@
   .astuces li { background:var(--soft); border-radius:18px; padding:14px 16px; font-size:15px; line-height:1.45; }
   .astuces li + li { margin-top:10px; }
 
+  /* Journal */
+  .lien { background:none; border:0; padding:0; margin-top:12px; font:inherit; font-size:15px; font-weight:600; color:var(--accent); cursor:pointer; }
+  .journal details { border:1px solid var(--line); border-radius:20px; padding:12px 14px; scroll-margin:16px; }
+  .journal details + details { margin-top:10px; }
+  .journal summary { display:flex; align-items:center; gap:12px; list-style:none; cursor:pointer; }
+  .journal summary::-webkit-details-marker { display:none; }
+  .journal .em { font-size:30px; width:38px; text-align:center; flex:none; }
+  .journal summary b { font-size:16px; }
+  .journal summary small { display:block; font-size:13px; color:var(--muted); margin-top:1px; }
+  .journal .tag { margin-left:auto; flex:none; font-size:11px; font-weight:700; padding:3px 9px; border-radius:10px; background:var(--soft); color:var(--accent); }
+  .journal .encours { border-color:var(--accent); box-shadow:0 0 0 4px var(--soft); }
+  .journal .avenir summary { opacity:.55; }
+  .journal h4 { font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:16px 0 4px; }
+  .journal p { margin:0; font-size:15px; line-height:1.55; }
+  .journal .mesures { color:var(--muted); font-size:13px; margin-top:14px; }
+
   /* En-tête des onglets Parcours et Prénoms */
   .entete { text-align:center; padding:4px 16px 0; }
   .entete h1 { font-family:var(--serif); font-weight:600; font-size:32px; margin:8px 0 0; }
@@ -200,6 +216,7 @@
     <section>
       <h2>Cette semaine</h2>
       <p class="dev" id="dev"></p>
+      <button class="lien" id="vers-journal">Lire le journal de la semaine →</button>
     </section>
 
     <section class="pour-papa">
@@ -222,6 +239,14 @@
       <p>Repères moyens, donnés à titre indicatif.<br>Seul le suivi par la sage-femme ou le médecin fait foi.</p>
       <p><span>ameli.fr</span> · <span>service-public.fr</span> · <span>Code du travail</span> · <span>HAS</span> · <span>CNGOF</span> · <span>ANSM</span> · <span>OMS</span> · <span>maternités et CHU</span></p>
     </footer>
+  </div>
+</div>
+
+<div class="onglet" id="t-journal" role="tabpanel" aria-labelledby="b-journal" hidden>
+  <header class="entete"><p class="jour rappel"></p><h1>Le journal de bébé</h1></header>
+  <div class="feuille journal">
+    <div id="journal"></div>
+    <footer class="source"><p>Repères moyens : chaque bébé grandit à son rythme.</p></footer>
   </div>
 </div>
 
@@ -261,6 +286,10 @@
   <button id="b-semaine" role="tab" aria-controls="t-semaine">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-9.2-9.3C1.7 7.6 3.8 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.2 0 5.3 3.1 4.2 6.2C19.5 15.4 12 20 12 20z"/></svg>
     Cette semaine
+  </button>
+  <button id="b-journal" role="tab" aria-controls="t-journal">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5.5c2.8-1.2 5.8-1.2 8.5.8 2.7-2 5.7-2 8.5-.8v13c-2.8-1.2-5.8-1.2-8.5.8-2.7-2-5.7-2-8.5-.8z"/><path d="M12 6.3v13.5"/></svg>
+    Journal
   </button>
   <button id="b-parcours" role="tab" aria-controls="t-parcours">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
@@ -447,6 +476,86 @@ const ALERTES = [
   [24, "démangeaisons intenses des paumes et des plantes des pieds"],
 ];
 
+// Journal détaillé : [ce qui se développe chez bébé, ce qui se passe dans le ventre], par semaine d'aménorrhée
+const JOURNAL = {
+  4:  ["L'œuf fécondé vient de s'implanter dans la paroi de l'utérus. Il ne mesure qu'environ 0,1 mm et ses cellules se répartissent déjà en deux groupes : l'un deviendra l'embryon, l'autre le placenta.",
+       "L'hormone de grossesse (hCG) commence à être produite : c'est elle que détectent les tests. La muqueuse de l'utérus s'épaissit pour accueillir l'œuf."],
+  5:  ["L'embryon s'organise en trois couches de cellules, d'où naîtront tous les organes. Le tube neural, ébauche du cerveau et de la moelle épinière, commence à se former, ainsi qu'un cœur primitif en forme de tube.",
+       "Le sac de grossesse devient visible à l'échographie. Le futur placenta s'ancre dans la paroi de l'utérus pour y puiser de quoi nourrir l'embryon."],
+  6:  ["Le cœur se met à battre, très vite : autour de 100 à 120 battements par minute. Le tube neural se ferme. On distingue l'ébauche des yeux, des oreilles et les bourgeons des bras.",
+       "Une petite poche, la vésicule vitelline, nourrit l'embryon en attendant que le placenta prenne le relais. On la voit bien à l'échographie."],
+  7:  ["Le cerveau grandit très vite et se divise en plusieurs zones. Les bourgeons des jambes apparaissent après ceux des bras. Le foie, l'estomac et les intestins commencent à se former.",
+       "Le cordon ombilical se forme et relie l'embryon au futur placenta. L'utérus commence à grossir, mais rien ne se voit encore de l'extérieur."],
+  8:  ["Les mains et les pieds ressemblent à de petites palettes où se dessinent les doigts. Les paupières, le nez et la lèvre supérieure se forment. Le cœur est maintenant divisé en quatre cavités.",
+       "Les premiers mouvements spontanés apparaissent, bien trop légers pour être sentis. Le liquide amniotique entoure l'embryon et le protège des chocs."],
+  9:  ["Les doigts et les orteils se séparent. Les bras s'allongent et se plient aux coudes. Les organes génitaux commencent à se différencier, même si on ne peut pas encore les voir.",
+       "Le placenta grandit et commence à produire des hormones. C'est souvent la période où les nausées sont les plus fortes."],
+  10: ["Fin de la période embryonnaire : tous les organes principaux sont en place, il reste à les faire grandir et mûrir. L'embryon devient un fœtus, et sa petite queue a disparu.",
+       "Bébé bouge déjà beaucoup : il se tourne, s'étire, sursaute. Le cordon ombilical contient maintenant une veine et deux artères."],
+  11: ["Les os commencent à durcir et les bourgeons des dents de lait se forment sous les gencives. Les ongles apparaissent. Les reins commencent à produire de l'urine.",
+       "Bébé avale du liquide amniotique et en rejette sous forme d'urine : c'est ainsi que le liquide se renouvelle en permanence."],
+  12: ["Le visage prend un profil bien humain : les yeux se rapprochent de l'avant de la tête et les oreilles remontent à leur place. Les premiers réflexes apparaissent : bébé ouvre et ferme les doigts, pointe les orteils.",
+       "L'utérus sort du bassin et se sent juste au-dessus du pubis. C'est la période de l'échographie du 1er trimestre."],
+  13: ["Les intestins, qui grandissaient dans le cordon ombilical faute de place, rentrent dans le ventre. Les cordes vocales se forment. Bébé fait des mouvements de respiration, sans air, pour entraîner ses muscles.",
+       "Le placenta prend le relais pour produire les hormones de grossesse : chez beaucoup de femmes, les nausées et la fatigue commencent à diminuer."],
+  14: ["Bébé peut froncer les sourcils, grimacer et sucer son pouce. Le cou s'allonge et la tête se redresse. Le foie produit de la bile et la rate aide à fabriquer les globules rouges.",
+       "Bébé a toute la place de faire des galipettes dans environ 100 ml de liquide amniotique."],
+  15: ["Le squelette continue de durcir et se voit bien à l'échographie. La peau, encore très fine, laisse voir les vaisseaux sanguins. Les papilles gustatives se forment.",
+       "Le liquide amniotique a déjà un goût, qui change selon ce que mange la maman : bébé découvre les saveurs avant même de naître."],
+  16: ["Les empreintes digitales se dessinent au bout des doigts. Les muscles du dos se renforcent et bébé se tient plus droit. Les yeux bougent lentement sous les paupières encore fermées.",
+       "Les femmes qui ont déjà eu un enfant peuvent parfois sentir les premiers mouvements dès maintenant, comme de petites bulles."],
+  17: ["Un fin duvet, le lanugo, commence à couvrir le corps et l'aide à garder sa chaleur. La graisse brune, qui lui servira à se réchauffer après la naissance, commence à se former.",
+       "Le cordon ombilical s'épaissit et se renforce. Bébé joue avec : il l'attrape, le tire, sans aucun danger."],
+  18: ["Les oreilles sont presque à leur place définitive et les petits os de l'oreille moyenne durcissent. Les nerfs se couvrent de myéline, une gaine qui accélère les messages du cerveau.",
+       "Bébé bouge énormément : coups de pied, retournements, galipettes. Pour une première grossesse, on les ressent souvent entre 18 et 22 SA."],
+  19: ["Une crème blanche et grasse, le vernix, se forme sur la peau pour la protéger du liquide dans lequel bébé baigne en permanence. Les zones du cerveau dédiées aux cinq sens se développent.",
+       "Si c'est une fille, son utérus est formé et ses ovaires contiennent déjà des millions d'ovules."],
+  20: ["À mi-chemin ! À partir de maintenant, on mesure bébé de la tête aux talons. Les cheveux, les sourcils et les cils poussent. Bébé alterne des périodes de sommeil et d'éveil.",
+       "Le haut de l'utérus arrive environ au niveau du nombril. Les intestins de bébé commencent à accumuler le méconium, ses toutes premières selles après la naissance."],
+  21: ["Le système digestif s'entraîne : bébé avale de plus en plus de liquide amniotique et en absorbe un peu. La moelle des os commence à fabriquer les cellules du sang.",
+       "Les mouvements deviennent plus nets. Le papa peut parfois les sentir en posant la main sur le ventre, même si c'est souvent un peu plus tard."],
+  22: ["Bébé ressemble à un nouveau-né en miniature, encore très mince. Les lèvres sont bien dessinées et les bourgeons des dents définitives se forment sous ceux des dents de lait.",
+       "C'est la période de l'échographie du 2e trimestre, qui vérifie en détail chaque organe."],
+  23: ["L'oreille interne devient fonctionnelle : bébé perçoit les bruits du corps de sa maman (cœur, respiration, digestion) et commence à entendre les voix de l'extérieur, surtout les sons graves.",
+       "Le liquide amniotique atténue les sons, comme quand on a la tête sous l'eau. Bébé peut sursauter à un bruit fort."],
+  24: ["Les poumons commencent à fabriquer le surfactant, une substance indispensable pour respirer à l'air libre. Le visage est presque achevé.",
+       "Bébé prend du poids régulièrement. Ses mouvements suivent souvent un rythme : plus calmes quand sa maman bouge, plus vifs quand elle se repose."],
+  25: ["Les mains sont très habiles : bébé attrape ses pieds, serre le poing, touche son visage. Les narines, bouchées jusque-là, commencent à s'ouvrir.",
+       "Le hoquet de bébé peut se sentir : de petits sursauts réguliers, sans aucun danger."],
+  26: ["Les paupières, fermées depuis le 3e mois, commencent à s'ouvrir. Les yeux sont formés, mais leur couleur définitive ne s'installera qu'après la naissance.",
+       "Bébé réagit au toucher et aux sons : il peut répondre quand on lui parle ou qu'on pose la main sur le ventre."],
+  27: ["Le cerveau grandit très vite et se plisse. Bébé a des phases de sommeil agité, pendant lesquelles il pourrait déjà rêver.",
+       "Fin du 2e trimestre. Les mouvements deviennent plus forts, et parfois visibles de l'extérieur."],
+  28: ["Bébé ouvre et ferme les yeux, cligne et réagit à une lumière forte à travers le ventre. Les poumons continuent de mûrir.",
+       "Début du 3e trimestre. Bébé a encore assez de place pour se retourner dans tous les sens."],
+  29: ["La graisse s'accumule sous la peau, qui se lisse et devient moins transparente. Les muscles et les poumons continuent de se renforcer.",
+       "Les coups sont plus vigoureux : on peut parfois deviner un pied ou un coude qui pousse sous la peau."],
+  30: ["La moelle des os fabrique désormais seule les globules rouges. Le cerveau grossit vite, et le crâne reste souple pour lui laisser de la place.",
+       "Bébé prend maintenant près de 200 g par semaine. Le liquide amniotique approche de son volume maximal."],
+  31: ["Les pupilles réagissent à la lumière. Les cinq sens fonctionnent : bébé goûte, sent, entend, perçoit la lumière et touche.",
+       "Les mouvements changent : moins de grandes galipettes, plus de coups et d'étirements, car la place diminue."],
+  32: ["Les ongles atteignent le bout des doigts. Le lanugo commence à tomber. Bébé s'entraîne à respirer, à téter et à avaler.",
+       "C'est la période de l'échographie du 3e trimestre, qui vérifie la croissance de bébé et sa position."],
+  33: ["Les os durcissent, sauf ceux du crâne, qui restent souples et séparés par les fontanelles : ils pourront se chevaucher un peu au moment de l'accouchement.",
+       "Bébé reçoit de plus en plus d'anticorps de sa maman à travers le placenta : ils le protégeront pendant ses premiers mois."],
+  34: ["Les poumons sont presque mûrs. Le système nerveux et les défenses immunitaires continuent de se renforcer. Chez un garçon, les testicules descendent dans les bourses.",
+       "Le liquide amniotique atteint son volume maximal, autour d'un litre, puis diminuera peu à peu."],
+  35: ["Les reins sont complètement développés et le foie commence à éliminer certains déchets. Bébé prend environ 200 à 250 g par semaine.",
+       "Bébé a de moins en moins de place : il bouge toujours autant, mais différemment, avec des mouvements plus lents et plus amples."],
+  36: ["Bébé perd peu à peu son lanugo et son vernix, qu'il avale avec le liquide amniotique : ils formeront son méconium.",
+       "La plupart des bébés sont maintenant tête en bas. Bébé peut descendre dans le bassin, ce qui soulage souvent la respiration de sa maman."],
+  37: ["Bébé est considéré à terme : ses organes sont prêts à fonctionner hors du ventre. Il continue surtout à prendre des forces et du poids.",
+       "Bébé s'entraîne : il suce son pouce, cligne des yeux, tourne la tête et fait des mouvements de respiration."],
+  38: ["Les poumons produisent davantage de surfactant. Le cerveau et le système nerveux se perfectionnent, et continueront de se développer longtemps après la naissance.",
+       "Le placenta transmet toujours nutriments et anticorps. Bébé continue de bouger jusqu'au bout : des mouvements qui diminuent doivent toujours faire appeler la maternité."],
+  39: ["Bébé a constitué des réserves de graisse pour garder sa chaleur après la naissance. Sa peau est lisse ; le vernix ne reste que dans les plis.",
+       "Bébé est bien installé, le plus souvent tête en bas. On pense qu'il participe lui-même, par ses hormones, au déclenchement du travail."],
+  40: ["Bébé est prêt. Ses ongles peuvent dépasser le bout des doigts, et certains bébés ont déjà beaucoup de cheveux.",
+       "Peu de bébés naissent le jour exact de la date prévue : la naissance peut arriver à tout moment."],
+  41: ["C'est le terme en France. Bébé continue de grandir un peu, et sa peau peut être légèrement sèche à la naissance.",
+       "À partir du terme, la maternité surveille plus souvent bébé et le liquide amniotique. Si la naissance tarde, un déclenchement peut être proposé."],
+};
+
 // Début du n-ième mois de grossesse, en jours d'aménorrhée (1 mois ≈ 52/12 semaines, grossesse = SA - 2)
 const mois = n => Math.round((2 + (n - 1) * 52 / 12) * 7);
 
@@ -605,15 +714,35 @@ document.querySelectorAll("#choix button[data-profil]").forEach(b => b.onclick =
 
 // Onglets (l'onglet ouvert est gardé dans l'adresse : #parcours, #prenoms)
 document.querySelectorAll(".rappel").forEach(p => p.textContent = `${sa} SA` + (j ? ` + ${j} j` : "") + ` · J-${reste}`);
-const ONGLETS = ["semaine", "parcours", "prenoms"];
+// Journal : semaine en cours ouverte et mise en avant (textes écrits ici : innerHTML sans risque)
+const court2 = { day: "numeric", month: "short" };
+$("journal").innerHTML = Object.keys(JOURNAL).map(Number).map(w => {
+  const [cm, g, fruit, emoji] = SEMAINES[w];
+  const etat = w === s && sa >= 4 ? "encours" : w > sa ? "avenir" : "passe";
+  const tag = etat === "encours" ? `<span class="tag">cette semaine</span>` : etat === "avenir" ? `<span class="tag">à venir</span>` : "";
+  const mesures = (cm < 1 ? `${virgule(cm * 10, 0)} mm` : `${virgule(cm, 1)} cm`) + (g == null ? "" : g < 1000 ? ` · ${g} g` : ` · ${virgule(g / 1000, 2)} kg`);
+  return `<details id="sem-${w}" class="${etat}"${etat === "encours" ? " open" : ""}>
+    <summary><span class="em">${emoji}</span><span><b>${w} SA</b> · ${fruit}<small>du ${date(w * 7, court2)} au ${date(w * 7 + 6, court2)}</small></span>${tag}</summary>
+    <h4>Bébé</h4><p>${JOURNAL[w][0]}</p>
+    <h4>Dans le ventre</h4><p>${JOURNAL[w][1]}</p>
+    <p class="mesures">En début de semaine : ${mesures}</p>
+  </details>`;
+}).join("");
+
+const ONGLETS = ["semaine", "journal", "parcours", "prenoms"];
 const montrer = nom => {
   for (const o of ONGLETS) {
     $("t-" + o).hidden = o !== nom;
     $("b-" + o).setAttribute("aria-selected", o === nom);
   }
 };
-for (const o of ONGLETS) $("b-" + o).onclick = () => { montrer(o); history.replaceState(null, "", "#" + o); scrollTo(0, 0); };
-montrer(ONGLETS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "semaine");
+// Dans le journal, on arrive directement sur la semaine en cours
+const enHaut = o => o === "journal" && $("sem-" + s) ? $("sem-" + s).scrollIntoView() : scrollTo(0, 0);
+for (const o of ONGLETS) $("b-" + o).onclick = () => { montrer(o); history.replaceState(null, "", "#" + o); enHaut(o); };
+const depart = ONGLETS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "semaine";
+montrer(depart);
+if (depart === "journal") requestAnimationFrame(() => enHaut(depart));
+$("vers-journal").onclick = () => $("b-journal").click();
 
 // Hors connexion
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
