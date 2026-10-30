@@ -77,10 +77,21 @@
     box-shadow:0 12px 40px rgba(120,60,80,.18); }
   .choix h1 { font-family:var(--serif); font-weight:600; font-size:28px; margin:6px 0 4px; }
   .choix p { color:var(--muted); font-size:15px; margin:0 0 20px; }
-  .choix .lettre { font-family:var(--serif); font-size:18px; line-height:1.55; color:var(--text); text-align:left; white-space:pre-line;
-    max-height:55vh; overflow-y:auto; }
   .choix button { display:block; width:100%; margin-top:10px; padding:16px; border-radius:18px; border:2px solid var(--line);
     background:var(--bg); font:inherit; font-size:18px; font-weight:700; color:var(--text); cursor:pointer; }
+
+  /* Mot pour elle : carte-lettre */
+  .mot .boite { position:relative; max-width:360px; padding:46px 26px 22px; text-align:left;
+    background:linear-gradient(180deg, var(--soft), var(--sheet) 140px); animation:apparition .5s ease-out both; }
+  .mot .coeur { position:absolute; top:-28px; left:50%; transform:translateX(-50%); width:56px; height:56px; border-radius:50%;
+    display:grid; place-items:center; font-size:26px; background:var(--sheet); box-shadow:0 6px 18px rgba(120,60,80,.18); }
+  .mot h1 { text-align:center; font-style:italic; color:var(--accent); font-size:30px; margin:0 0 18px; }
+  .mot .lettre { max-height:52vh; overflow-y:auto; }
+  .mot .lettre p { font-family:var(--serif); font-size:17px; line-height:1.6; color:var(--text); margin:0 0 12px; text-wrap:pretty; }
+  .mot .lettre .signature { text-align:right; font-style:italic; font-size:20px; color:var(--accent); margin:20px 0 0; }
+  .mot button { margin-top:22px; background:var(--accent); border-color:var(--accent); color:var(--sheet); font-size:17px; }
+  @keyframes apparition { from { opacity:0; transform:translateY(16px) scale(.97); } }
+  @media (prefers-reduced-motion: reduce) { .mot .boite { animation:none; } }
   .intro { color:var(--muted); font-size:15px; margin:-6px 0 8px; }
   .astuces { list-style:none; margin:0; padding:0; }
   .astuces li { background:var(--soft); border-radius:18px; padding:14px 16px; font-size:15px; line-height:1.45; }
@@ -88,7 +99,7 @@
 
   /* Journal */
   .lien { background:none; border:0; padding:0; margin-top:12px; font:inherit; font-size:15px; font-weight:600; color:var(--accent); cursor:pointer; }
-  .journal details { border:1px solid var(--line); border-radius:20px; padding:12px 14px; scroll-margin:16px; }
+  .journal details { border:1px solid var(--line); border-radius:20px; padding:12px 14px; }
   .journal details + details { margin-top:10px; }
   .journal summary { display:flex; align-items:center; gap:12px; list-style:none; cursor:pointer; }
   .journal summary::-webkit-details-marker { display:none; }
@@ -97,7 +108,6 @@
   .journal summary small { display:block; font-size:13px; color:var(--muted); margin-top:1px; }
   .journal .tag { margin-left:auto; flex:none; font-size:11px; font-weight:700; padding:3px 9px; border-radius:10px; background:var(--soft); color:var(--accent); }
   .journal .encours { border-color:var(--accent); box-shadow:0 0 0 4px var(--soft); }
-  .journal .avenir summary { opacity:.55; }
   .journal h4 { font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:16px 0 4px; }
   .journal p { margin:0; font-size:15px; line-height:1.55; }
   .journal .mesures { color:var(--muted); font-size:13px; margin-top:14px; }
@@ -168,11 +178,11 @@
 </style>
 </head>
 <body>
-<div class="choix" id="mot" hidden>
+<div class="choix mot" id="mot" hidden>
   <div class="boite" role="dialog" aria-modal="true" aria-labelledby="mot-titre">
-    <p class="jour">Pour toi</p>
-    <h1 id="mot-titre">❤️</h1>
-    <p class="lettre" id="mot-texte"></p>
+    <div class="coeur" aria-hidden="true">💗</div>
+    <h1 id="mot-titre">Pour toi</h1>
+    <div class="lettre" id="mot-texte"></div>
     <button id="mot-fermer">Découvrir l'appli</button>
   </div>
 </div>
@@ -678,7 +688,7 @@ for (const id of ["garcons", "filles"]) {
 }
 
 // Mot pour la future maman : s'affiche une seule fois, la première fois que « Future maman » est choisi.
-// Laisser vide pour ne rien afficher. Les retours à la ligne sont conservés.
+// Laisser vide pour ne rien afficher. Chaque ligne devient un paragraphe, la dernière une signature.
 const MOT_POUR_ELLE = `
 Même si ce n'est pas grand chose par rapport à ce que tu fais déjà pour ce nouvel enfant, c'est ma façon à moi de participer un peu plus.
 J'espère que cette petite attention saura te faire plaisir, et pourquoi pas t'être utile !
@@ -691,7 +701,14 @@ const ecrire = (cle, val) => { try { localStorage.setItem(cle, val); } catch {} 
 
 const motSiBesoin = () => {
   if (document.body.dataset.profil !== "maman" || !MOT_POUR_ELLE.trim() || lire("mot-lu")) return;
-  $("mot-texte").textContent = MOT_POUR_ELLE.trim();
+  // Une ligne = un paragraphe ; la dernière ligne sert de signature
+  const lignes = MOT_POUR_ELLE.trim().split("\n").map(l => l.trim()).filter(Boolean);
+  $("mot-texte").replaceChildren(...lignes.map((l, i) => {
+    const p = document.createElement("p");
+    p.textContent = l;
+    if (i > 0 && i === lignes.length - 1) p.className = "signature";
+    return p;
+  }));
   $("mot").hidden = false;
 };
 $("mot-fermer").onclick = () => { $("mot").hidden = true; ecrire("mot-lu", "1"); };
@@ -714,12 +731,14 @@ document.querySelectorAll("#choix button[data-profil]").forEach(b => b.onclick =
 
 // Onglets (l'onglet ouvert est gardé dans l'adresse : #parcours, #prenoms)
 document.querySelectorAll(".rappel").forEach(p => p.textContent = `${sa} SA` + (j ? ` + ${j} j` : "") + ` · J-${reste}`);
-// Journal : semaine en cours ouverte et mise en avant (textes écrits ici : innerHTML sans risque)
+// Journal : seulement les semaines déjà vécues (pas de spoil), la plus récente en haut et ouverte
+// (textes écrits ici : innerHTML sans risque)
 const court2 = { day: "numeric", month: "short" };
-$("journal").innerHTML = Object.keys(JOURNAL).map(Number).map(w => {
+const vecues = Object.keys(JOURNAL).map(Number).filter(w => w <= s && sa >= 4).reverse();
+$("journal").innerHTML = vecues.length ? vecues.map(w => {
   const [cm, g, fruit, emoji] = SEMAINES[w];
-  const etat = w === s && sa >= 4 ? "encours" : w > sa ? "avenir" : "passe";
-  const tag = etat === "encours" ? `<span class="tag">cette semaine</span>` : etat === "avenir" ? `<span class="tag">à venir</span>` : "";
+  const etat = w === s ? "encours" : "passe";
+  const tag = etat === "encours" ? `<span class="tag">cette semaine</span>` : "";
   const mesures = (cm < 1 ? `${virgule(cm * 10, 0)} mm` : `${virgule(cm, 1)} cm`) + (g == null ? "" : g < 1000 ? ` · ${g} g` : ` · ${virgule(g / 1000, 2)} kg`);
   return `<details id="sem-${w}" class="${etat}"${etat === "encours" ? " open" : ""}>
     <summary><span class="em">${emoji}</span><span><b>${w} SA</b> · ${fruit}<small>du ${date(w * 7, court2)} au ${date(w * 7 + 6, court2)}</small></span>${tag}</summary>
@@ -727,7 +746,7 @@ $("journal").innerHTML = Object.keys(JOURNAL).map(Number).map(w => {
     <h4>Dans le ventre</h4><p>${JOURNAL[w][1]}</p>
     <p class="mesures">En début de semaine : ${mesures}</p>
   </details>`;
-}).join("");
+}).join("") : `<p class="mesures">Le journal commence à 4 SA.</p>`;
 
 const ONGLETS = ["semaine", "journal", "parcours", "prenoms"];
 const montrer = nom => {
@@ -736,12 +755,8 @@ const montrer = nom => {
     $("b-" + o).setAttribute("aria-selected", o === nom);
   }
 };
-// Dans le journal, on arrive directement sur la semaine en cours
-const enHaut = o => o === "journal" && $("sem-" + s) ? $("sem-" + s).scrollIntoView() : scrollTo(0, 0);
-for (const o of ONGLETS) $("b-" + o).onclick = () => { montrer(o); history.replaceState(null, "", "#" + o); enHaut(o); };
-const depart = ONGLETS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "semaine";
-montrer(depart);
-if (depart === "journal") requestAnimationFrame(() => enHaut(depart));
+for (const o of ONGLETS) $("b-" + o).onclick = () => { montrer(o); history.replaceState(null, "", "#" + o); scrollTo(0, 0); };
+montrer(ONGLETS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "semaine");
 $("vers-journal").onclick = () => $("b-journal").click();
 
 // Hors connexion
