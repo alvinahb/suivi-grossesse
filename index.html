@@ -68,6 +68,19 @@
 
   .dev { font-family:var(--serif); font-size:18px; line-height:1.5; margin:0; padding-left:16px; border-left:3px solid var(--accent2); }
 
+  /* Symptômes */
+  .symptomes details { border-bottom:1px solid var(--line); padding:12px 0; }
+  .symptomes summary { font-weight:600; font-size:16px; cursor:pointer; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  .symptomes summary::-webkit-details-marker { display:none; }
+  .symptomes summary::after { content:"+"; color:var(--accent); font-weight:700; }
+  .symptomes details[open] summary::after { content:"–"; }
+  .symptomes p { margin:8px 0 0; font-size:15px; line-height:1.45; }
+  .symptomes .consulter { color:var(--muted); font-size:14px; }
+  .alerte { background:var(--soft); border-radius:20px; padding:16px 18px; margin-top:18px; font-size:14px; line-height:1.5; }
+  .alerte b { color:var(--accent); }
+  .alerte ul { margin:6px 0 10px; padding-left:18px; }
+  .alerte p { margin:0; }
+
   /* Trimestres */
   .trimestres { display:flex; gap:4px; }
   .trimestres div { flex:1; }
@@ -127,6 +140,16 @@
     <section>
       <h2>Cette semaine</h2>
       <p class="dev" id="dev"></p>
+    </section>
+
+    <section class="symptomes">
+      <h2>Petits maux du moment</h2>
+      <div id="symptomes"></div>
+      <div class="alerte">
+        <b>Appelez votre maternité ou les urgences gynécologiques</b> (le 15 si c'est grave) en cas de :
+        <ul id="alertes"></ul>
+        <p><b>Médicaments :</b> paracétamol seulement si besoin. Jamais d'ibuprofène ni d'aspirine sans avis médical : ils sont interdits à partir de 24 SA.</p>
+      </div>
     </section>
 
     <section>
@@ -200,6 +223,45 @@ const SEMAINES = {
   41: [51.5, 3617, "une pastèque", "🍉", "C'est le terme : la naissance peut arriver à tout moment."], // courbe OMS arrêtée à 40 SA
 };
 
+// Petits maux fréquents : [de SA, jusqu'à SA (exclu), symptôme, que faire, consulter si…]
+const SYMPTOMES = [
+  [5, 16,  "Nausées et vomissements", "Fractionnez les repas, grignotez un biscuit sec avant de vous lever, évitez les odeurs fortes et les plats gras. Le gingembre peut aider.", "si vous ne gardez rien, même l'eau, ou si vous perdez du poids."],
+  [4, 15,  "Grande fatigue", "C'est l'effet des hormones : faites des siestes, couchez-vous tôt et allégez votre emploi du temps."],
+  [4, 15,  "Seins tendus et sensibles", "Portez un soutien-gorge confortable, sans armatures, y compris la nuit si ça soulage."],
+  [6, 15,  "Envies fréquentes d'uriner", "Continuez à boire beaucoup, plutôt dans la journée que le soir.", "si ça brûle ou fait mal : c'est peut-être une infection urinaire, fréquente pendant la grossesse."],
+  [4, 42,  "Humeur en dents de scie", "C'est très fréquent. Parlez-en autour de vous et pendant l'entretien prénatal précoce.", "si la tristesse ou l'anxiété durent plus de deux semaines."],
+  [8, 42,  "Constipation", "Buvez beaucoup, mangez des fibres (fruits, légumes, céréales complètes) et marchez chaque jour. Pas de laxatif sans avis.", "si elle dure malgré ces conseils : un traitement compatible avec la grossesse existe."],
+  [8, 42,  "Pertes blanches plus abondantes", "C'est normal. Toilette à l'eau ou avec un savon doux, sans douche vaginale.", "si elles sentent mauvais, démangent ou changent de couleur."],
+  [14, 28, "Vertiges", "Levez-vous doucement, ne sautez pas de repas, et allongez-vous sur le côté gauche si la tête tourne.", "en cas de malaise avec perte de connaissance."],
+  [14, 42, "Nez bouché, saignements de nez", "Lavez le nez au sérum physiologique. Pas de décongestionnant sans avis."],
+  [14, 42, "Gencives qui saignent", "Utilisez une brosse à dents souple. L'examen chez le dentiste est pris en charge dès le 4e mois."],
+  [14, 24, "Tiraillements dans le bas du ventre", "Les ligaments de l'utérus s'étirent : changez de position doucement et reposez-vous.", "si la douleur est forte ou revient à intervalles réguliers."],
+  [20, 42, "Brûlures d'estomac", "Faites de petits repas, pas trop gras ni épicés. Évitez de vous allonger juste après manger et surélevez la tête du lit.", "si ça persiste : un traitement compatible avec la grossesse existe."],
+  [20, 42, "Mal de dos", "Pliez les genoux pour porter, gardez le dos droit, essayez la natation ou le yoga prénatal. Un kiné ou un ostéopathe peut aider.", "si la douleur est forte ou descend dans la jambe."],
+  [20, 42, "Crampes dans les jambes", "Étirez le mollet en tirant la pointe du pied vers vous, et buvez suffisamment."],
+  [20, 42, "Vergetures, peau qui tire", "Hydratez la peau du ventre, des seins et des hanches avec une crème neutre.", "si ça démange fort, surtout sur les paumes et sous les pieds."],
+  [24, 42, "Jambes lourdes, chevilles gonflées", "Surélevez les jambes, évitez de rester debout longtemps et la chaleur, marchez. Des bas de contention peuvent être prescrits.", "si le visage ou les mains gonflent d'un coup, surtout avec des maux de tête."],
+  [28, 42, "Ventre qui durcit", "Des contractions irrégulières et sans douleur sont normales : reposez-vous, elles passent.", "si elles deviennent régulières ou douloureuses avant 37 SA."],
+  [28, 38, "Essoufflement", "L'utérus remonte sous les poumons : ralentissez et tenez-vous bien droite.", "si c'est brutal ou avec une douleur dans la poitrine."],
+  [28, 42, "Sommeil difficile", "Dormez sur le côté, plutôt le gauche, avec un coussin entre les genoux."],
+  [28, 42, "Hémorroïdes", "Évitez la constipation et ne forcez pas aux toilettes.", "si elles font mal : un traitement local adapté existe."],
+  [32, 42, "Fatigue du 3e trimestre", "Bébé pèse lourd : reposez-vous dès que possible et faites des pauses."],
+  [34, 42, "Envies fréquentes d'uriner", "Bébé appuie sur la vessie : c'est normal. Continuez à boire.", "si ça brûle ou fait mal."],
+];
+
+// Signes d'alerte : [à partir de SA, signe]
+const ALERTES = [
+  [0,  "saignements"],
+  [0,  "fièvre à 38 °C ou plus"],
+  [0,  "douleur forte au ventre, ou d'un seul côté"],
+  [0,  "vomissements qui empêchent de boire"],
+  [20, "maux de tête intenses, troubles de la vue, gonflement brutal du visage ou des mains"],
+  [20, "perte de liquide clair, comme de l'eau qui coule"],
+  [20, "contractions régulières ou douloureuses avant 37 SA"],
+  [24, "bébé qui bouge moins que d'habitude"],
+  [24, "démangeaisons intenses des paumes et des plantes des pieds"],
+];
+
 // Début du n-ième mois de grossesse, en jours d'aménorrhée (1 mois ≈ 52/12 semaines, grossesse = SA - 2)
 const mois = n => Math.round((2 + (n - 1) * 52 / 12) * 7);
 
@@ -271,6 +333,15 @@ const reste = Math.max(0, TERME - jours);
 $("reste").textContent = `J-${reste}`;
 $("dpa").textContent = "terme le " + date(TERME);
 $("dev").textContent = v[4];
+
+// Symptômes de la période (s borne la semaine entre 4 et 41)
+for (const [de, a, nom, conseil, consulter] of SYMPTOMES.filter(x => s >= x[0] && s < x[1])) {
+  const d = $("symptomes").appendChild(document.createElement("details"));
+  d.innerHTML = `<summary></summary><p></p>` + (consulter ? `<p class="consulter">Consultez ${consulter}</p>` : "");
+  d.firstChild.textContent = nom;
+  d.children[1].textContent = conseil;
+}
+$("alertes").innerHTML = ALERTES.filter(x => sa >= x[0]).map(x => `<li>${x[1]}</li>`).join("");
 
 // Trimestres : 1er jusqu'à 15 SA, 2e jusqu'à 28 SA, 3e jusqu'au terme
 $("trimestres").innerHTML = [[0, 15*7, "1er"], [15*7, 28*7, "2e"], [28*7, TERME, "3e"]].map(([de, a, nom], i) => {
