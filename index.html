@@ -29,6 +29,11 @@
   .fruit { font-size:24px; font-weight:600; margin:4px 0 0; }
   .size { font-size:20px; margin:12px 0 0; }
   .note { color:var(--muted); font-size:13px; margin:8px 0 0; }
+  .prenoms { display:flex; gap:16px; text-align:left; }
+  .prenoms div { flex:1; }
+  .prenoms h2 { font-size:17px; margin:0 0 8px; color:var(--accent); text-align:center; }
+  .prenoms ul { list-style:none; padding:0; margin:0; }
+  .prenoms li { padding:6px 0; border-bottom:1px solid var(--bg); font-size:17px; }
 </style>
 </head>
 <body>
@@ -47,6 +52,13 @@
   <div class="card">
     <p class="label">Terme prévu</p>
     <p class="fruit" id="dpa"></p>
+  </div>
+  <div class="card">
+    <p class="label">Idées de prénoms</p>
+    <div class="prenoms">
+      <div><h2>Garçon</h2><ul id="garcons"></ul></div>
+      <div><h2>Fille</h2><ul id="filles"></ul></div>
+    </div>
   </div>
 
 <script>
@@ -126,6 +138,19 @@ document.getElementById("mesure").textContent = s < 20 ? "longueur tête-fesses"
 
 const dpa = new Date(utc(DDR) + 280 * JOUR);
 document.getElementById("dpa").textContent = dpa.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+
+// Prénoms : un par ligne dans garcons.txt / filles.txt
+for (const id of ["garcons", "filles"]) {
+  const ul = document.getElementById(id);
+  fetch(id + ".txt", { cache: "no-store" })
+    .then(r => r.ok ? r.text() : "")
+    .catch(() => "")
+    .then(txt => {
+      const noms = txt.split("\n").map(n => n.trim()).filter(Boolean);
+      if (!noms.length) noms.push("—");
+      for (const n of noms) ul.appendChild(document.createElement("li")).textContent = n;
+    });
+}
 </script>
 </body>
 </html>
