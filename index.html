@@ -61,8 +61,22 @@
   .chiffres span { font-size:12px; color:var(--muted); }
 
   /* Feuille du bas */
-  .feuille { background:var(--sheet); border-radius:32px 32px 0 0; margin-top:28px;
-    padding:28px 20px calc(env(safe-area-inset-bottom) + 32px); box-shadow:0 -8px 30px rgba(120,60,80,.08); }
+  .feuille { background:var(--sheet); border-radius:32px 32px 0 0; margin-top:28px; min-height:70vh;
+    padding:28px 20px calc(env(safe-area-inset-bottom) + 100px); box-shadow:0 -8px 30px rgba(120,60,80,.08); }
+
+  /* En-tête des onglets Parcours et Prénoms */
+  .entete { text-align:center; padding:4px 16px 0; }
+  .entete h1 { font-family:var(--serif); font-weight:600; font-size:32px; margin:8px 0 0; }
+
+  /* Barre d'onglets */
+  .onglets { position:fixed; left:0; right:0; bottom:0; z-index:10; display:flex; justify-content:center; gap:4px;
+    padding:6px 12px calc(env(safe-area-inset-bottom) + 6px); border-top:1px solid var(--line);
+    background:color-mix(in srgb, var(--sheet) 85%, transparent); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); }
+  .onglets button { flex:1; max-width:140px; background:none; border:0; font:inherit; font-size:11px; font-weight:600; color:var(--muted);
+    display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 0; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .onglets svg { width:26px; height:26px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .onglets [aria-selected="true"] { color:var(--accent); }
+  .onglets [aria-selected="true"] svg { fill:var(--soft); }
   h2 { font-family:var(--serif); font-weight:600; font-size:21px; margin:0 0 14px; }
   section + section { margin-top:34px; }
 
@@ -114,6 +128,7 @@
 </head>
 <body>
 <main>
+<div class="onglet" id="t-semaine" role="tabpanel" aria-labelledby="b-semaine">
   <p class="jour" id="jour"></p>
 
   <div class="hero">
@@ -152,27 +167,52 @@
       </div>
     </section>
 
+    <p class="source">Repères moyens, à titre indicatif. Le calendrier de votre sage-femme ou médecin fait foi.<br>
+      Sources : ameli.fr, service-public.fr, HAS, CNGOF, ANSM ; poids : courbes OMS (2017).</p>
+  </div>
+</div>
+
+<div class="onglet" id="t-parcours" role="tabpanel" aria-labelledby="b-parcours" hidden>
+  <header class="entete"><p class="jour rappel"></p><h1>Le parcours</h1></header>
+  <div class="feuille">
     <section>
       <h2>Trimestres</h2>
       <div class="trimestres" id="trimestres"></div>
     </section>
 
     <section>
-      <h2>Le parcours</h2>
+      <h2>Rendez-vous et démarches</h2>
       <button class="voir" id="voir" hidden></button>
       <ul class="frise" id="rdv"></ul>
     </section>
+  </div>
+</div>
 
-    <section class="prenoms">
-      <h2>Idées de prénoms</h2>
+<div class="onglet" id="t-prenoms" role="tabpanel" aria-labelledby="b-prenoms" hidden>
+  <header class="entete"><p class="jour rappel"></p><h1>Idées de prénoms</h1></header>
+  <div class="feuille prenoms">
+    <section>
       <h3>Garçon</h3><ul id="garcons"></ul>
       <h3>Fille</h3><ul id="filles"></ul>
     </section>
-
-    <p class="source">Repères moyens, à titre indicatif. Le calendrier de votre sage-femme ou médecin fait foi.<br>
-      Sources : ameli.fr, service-public.fr, HAS, CNGOF ; poids : courbes OMS (2017).</p>
   </div>
+</div>
 </main>
+
+<nav class="onglets" role="tablist" aria-label="Sections">
+  <button id="b-semaine" role="tab" aria-controls="t-semaine">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-9.2-9.3C1.7 7.6 3.8 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.2 0 5.3 3.1 4.2 6.2C19.5 15.4 12 20 12 20z"/></svg>
+    Cette semaine
+  </button>
+  <button id="b-parcours" role="tab" aria-controls="t-parcours">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+    Parcours
+  </button>
+  <button id="b-prenoms" role="tab" aria-controls="t-prenoms">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.2V5a1.5 1.5 0 0 1 1.5-1.5h7.2l8.3 8.3-8.7 8.7z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+    Prénoms
+  </button>
+</nav>
 
 <script>
 // Premier jour des dernières règles (date d'aménorrhée)
@@ -382,6 +422,18 @@ for (const id of ["garcons", "filles"]) {
       if (!noms.length) ul.innerHTML = `<li class="vide">Pas encore d'idée…</li>`;
     });
 }
+
+// Onglets (l'onglet ouvert est gardé dans l'adresse : #parcours, #prenoms)
+document.querySelectorAll(".rappel").forEach(p => p.textContent = `${sa} SA` + (j ? ` + ${j} j` : "") + ` · J-${reste}`);
+const ONGLETS = ["semaine", "parcours", "prenoms"];
+const montrer = nom => {
+  for (const o of ONGLETS) {
+    $("t-" + o).hidden = o !== nom;
+    $("b-" + o).setAttribute("aria-selected", o === nom);
+  }
+};
+for (const o of ONGLETS) $("b-" + o).onclick = () => { montrer(o); history.replaceState(null, "", "#" + o); scrollTo(0, 0); };
+montrer(ONGLETS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "semaine");
 
 // Hors connexion
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
