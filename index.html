@@ -64,6 +64,24 @@
   .feuille { background:var(--sheet); border-radius:32px 32px 0 0; margin-top:28px; min-height:70vh;
     padding:28px 20px calc(env(safe-area-inset-bottom) + 100px); box-shadow:0 -8px 30px rgba(120,60,80,.08); }
 
+  /* Profil maman / papa */
+  body[data-profil="papa"] .pour-maman, body:not([data-profil="papa"]) .pour-papa { display:none; }
+  .profil { position:absolute; top:calc(env(safe-area-inset-top) + 12px); right:16px; background:var(--sheet); border:1px solid var(--line);
+    border-radius:20px; padding:5px 12px; font:inherit; font-size:13px; color:var(--text); cursor:pointer; }
+  .choix { position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:24px;
+    background:color-mix(in srgb, var(--bg) 70%, transparent); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+  .choix[hidden] { display:none; }
+  .choix .boite { background:var(--sheet); border-radius:28px; padding:28px 22px; width:100%; max-width:340px; text-align:center;
+    box-shadow:0 12px 40px rgba(120,60,80,.18); }
+  .choix h1 { font-family:var(--serif); font-weight:600; font-size:28px; margin:6px 0 4px; }
+  .choix p { color:var(--muted); font-size:15px; margin:0 0 20px; }
+  .choix button { display:block; width:100%; margin-top:10px; padding:16px; border-radius:18px; border:2px solid var(--line);
+    background:var(--bg); font:inherit; font-size:18px; font-weight:700; color:var(--text); cursor:pointer; }
+  .intro { color:var(--muted); font-size:15px; margin:-6px 0 8px; }
+  .astuces { list-style:none; margin:0; padding:0; }
+  .astuces li { background:var(--soft); border-radius:18px; padding:14px 16px; font-size:15px; line-height:1.45; }
+  .astuces li + li { margin-top:10px; }
+
   /* En-tête des onglets Parcours et Prénoms */
   .entete { text-align:center; padding:4px 16px 0; }
   .entete h1 { font-family:var(--serif); font-weight:600; font-size:32px; margin:8px 0 0; }
@@ -127,8 +145,19 @@
 </style>
 </head>
 <body>
+<div class="choix" id="choix" hidden>
+  <div class="boite" role="dialog" aria-modal="true" aria-labelledby="choix-titre">
+    <p class="jour">Bienvenue</p>
+    <h1 id="choix-titre">Qui êtes-vous ?</h1>
+    <p>Les conseils s'adaptent à votre choix. Vous pourrez changer plus tard.</p>
+    <button data-profil="maman">🤰 Future maman</button>
+    <button data-profil="papa">👨 Futur papa</button>
+  </div>
+</div>
+
 <main>
 <div class="onglet" id="t-semaine" role="tabpanel" aria-labelledby="b-semaine">
+  <button class="profil" id="profil" aria-label="Changer de profil"></button>
   <p class="jour" id="jour"></p>
 
   <div class="hero">
@@ -157,8 +186,14 @@
       <p class="dev" id="dev"></p>
     </section>
 
+    <section class="pour-papa">
+      <h2>À faire cette semaine</h2>
+      <ul class="astuces" id="astuces"></ul>
+    </section>
+
     <section class="symptomes">
       <h2>Petits maux du moment</h2>
+      <p class="intro pour-papa">Ce qu'elle ressent peut-être, et comment l'aider.</p>
       <div id="symptomes"></div>
       <div class="alerte">
         <b>Appelez votre maternité ou les urgences gynécologiques</b> (le 15 si c'est grave) en cas de :
@@ -263,30 +298,117 @@ const SEMAINES = {
   41: [51.5, 3617, "une pastèque", "🍉", "C'est le terme : la naissance peut arriver à tout moment."], // courbe OMS arrêtée à 40 SA
 };
 
-// Petits maux fréquents : [de SA, jusqu'à SA (exclu), symptôme, que faire, consulter si…]
+// Petits maux fréquents : [de SA, jusqu'à SA (exclu), symptôme, conseil (maman), consulter si… (ou null), comment l'aider (papa)]
 const SYMPTOMES = [
-  [5, 16,  "Nausées et vomissements", "Fractionnez les repas, grignotez un biscuit sec avant de vous lever, évitez les odeurs fortes et les plats gras. Le gingembre peut aider.", "si vous ne gardez rien, même l'eau, ou si vous perdez du poids."],
-  [4, 15,  "Grande fatigue", "C'est l'effet des hormones : faites des siestes, couchez-vous tôt et allégez votre emploi du temps."],
-  [4, 15,  "Seins tendus et sensibles", "Portez un soutien-gorge confortable, sans armatures, y compris la nuit si ça soulage."],
-  [6, 15,  "Envies fréquentes d'uriner", "Continuez à boire beaucoup, plutôt dans la journée que le soir.", "si ça brûle ou fait mal : c'est peut-être une infection urinaire, fréquente pendant la grossesse."],
-  [4, 42,  "Humeur en dents de scie", "C'est très fréquent. Parlez-en autour de vous et pendant l'entretien prénatal précoce.", "si la tristesse ou l'anxiété durent plus de deux semaines."],
-  [8, 42,  "Constipation", "Buvez beaucoup, mangez des fibres (fruits, légumes, céréales complètes) et marchez chaque jour. Pas de laxatif sans avis.", "si elle dure malgré ces conseils : un traitement compatible avec la grossesse existe."],
-  [8, 42,  "Pertes blanches plus abondantes", "C'est normal. Toilette à l'eau ou avec un savon doux, sans douche vaginale.", "si elles sentent mauvais, démangent ou changent de couleur."],
-  [14, 28, "Vertiges", "Levez-vous doucement, ne sautez pas de repas, et allongez-vous sur le côté gauche si la tête tourne.", "en cas de malaise avec perte de connaissance."],
-  [14, 42, "Nez bouché, saignements de nez", "Lavez le nez au sérum physiologique. Pas de décongestionnant sans avis."],
-  [14, 42, "Gencives qui saignent", "Utilisez une brosse à dents souple. L'examen chez le dentiste est pris en charge dès le 4e mois."],
-  [14, 24, "Tiraillements dans le bas du ventre", "Les ligaments de l'utérus s'étirent : changez de position doucement et reposez-vous.", "si la douleur est forte ou revient à intervalles réguliers."],
-  [20, 42, "Brûlures d'estomac", "Faites de petits repas, pas trop gras ni épicés. Évitez de vous allonger juste après manger et surélevez la tête du lit.", "si ça persiste : un traitement compatible avec la grossesse existe."],
-  [20, 42, "Mal de dos", "Pliez les genoux pour porter, gardez le dos droit, essayez la natation ou le yoga prénatal. Un kiné ou un ostéopathe peut aider.", "si la douleur est forte ou descend dans la jambe."],
-  [20, 42, "Crampes dans les jambes", "Étirez le mollet en tirant la pointe du pied vers vous, et buvez suffisamment."],
-  [20, 42, "Vergetures, peau qui tire", "Hydratez la peau du ventre, des seins et des hanches avec une crème neutre.", "si ça démange fort, surtout sur les paumes et sous les pieds."],
-  [24, 42, "Jambes lourdes, chevilles gonflées", "Surélevez les jambes, évitez de rester debout longtemps et la chaleur, marchez. Des bas de contention peuvent être prescrits.", "si le visage ou les mains gonflent d'un coup, surtout avec des maux de tête."],
-  [28, 42, "Ventre qui durcit", "Des contractions irrégulières et sans douleur sont normales : reposez-vous, elles passent.", "si elles deviennent régulières ou douloureuses avant 37 SA."],
-  [28, 38, "Essoufflement", "L'utérus remonte sous les poumons : ralentissez et tenez-vous bien droite.", "si c'est brutal ou avec une douleur dans la poitrine."],
-  [28, 42, "Sommeil difficile", "Dormez sur le côté, plutôt le gauche, avec un coussin entre les genoux."],
-  [28, 42, "Hémorroïdes", "Évitez la constipation et ne forcez pas aux toilettes.", "si elles font mal : un traitement local adapté existe."],
-  [32, 42, "Fatigue du 3e trimestre", "Bébé pèse lourd : reposez-vous dès que possible et faites des pauses."],
-  [34, 42, "Envies fréquentes d'uriner", "Bébé appuie sur la vessie : c'est normal. Continuez à boire.", "si ça brûle ou fait mal."],
+  [5, 16,  "Nausées et vomissements",
+    "Fractionnez les repas, grignotez un biscuit sec avant de vous lever, évitez les odeurs fortes et les plats gras. Le gingembre peut aider.",
+    "si rien ne passe, même l'eau, ou en cas de perte de poids.",
+    "Cuisinez sans odeurs fortes (ou aérez bien), laissez des biscuits secs sur sa table de nuit et proposez de petites collations plutôt que de gros repas."],
+  [4, 15,  "Grande fatigue",
+    "C'est l'effet des hormones : faites des siestes, couchez-vous tôt et allégez votre emploi du temps.",
+    null,
+    "Elle ne se voit pas mais elle est bien réelle : prenez plus de tâches à la maison et protégez ses siestes."],
+  [4, 15,  "Seins tendus et sensibles",
+    "Portez un soutien-gorge confortable, sans armatures, y compris la nuit si ça soulage.",
+    null,
+    "Soyez doux dans les câlins : la poitrine peut être très sensible."],
+  [6, 15,  "Envies fréquentes d'uriner",
+    "Continuez à boire beaucoup, plutôt dans la journée que le soir.",
+    "en cas de brûlures ou de douleurs : c'est peut-être une infection urinaire, fréquente pendant la grossesse.",
+    "Prévoyez des pauses en voiture et en balade, sans commentaire !"],
+  [4, 42,  "Humeur en dents de scie",
+    "C'est très fréquent. Parlez-en autour de vous et pendant l'entretien prénatal précoce.",
+    "si la tristesse ou l'anxiété durent plus de deux semaines.",
+    "Les hormones jouent beaucoup : écoutez sans minimiser, et parlez-en avec elle si vous la sentez triste ou anxieuse depuis longtemps."],
+  [8, 42,  "Constipation",
+    "Buvez beaucoup, mangez des fibres (fruits, légumes, céréales complètes) et marchez chaque jour. Pas de laxatif sans avis.",
+    "si elle dure malgré ces conseils : un traitement compatible avec la grossesse existe.",
+    "Proposez une marche ensemble chaque jour et des repas riches en fruits et légumes."],
+  [8, 42,  "Pertes blanches plus abondantes",
+    "C'est normal. Toilette à l'eau ou avec un savon doux, sans douche vaginale.",
+    "si elles sentent mauvais, démangent ou changent de couleur.",
+    "C'est normal et sans danger : rien de particulier à faire."],
+  [14, 28, "Vertiges",
+    "Levez-vous doucement, ne sautez pas de repas, et allongez-vous sur le côté gauche si la tête tourne.",
+    "en cas de malaise avec perte de connaissance.",
+    "Si la tête lui tourne, aidez-la à s'asseoir ou à s'allonger sur le côté gauche, et proposez-lui quelque chose à manger."],
+  [14, 42, "Nez bouché, saignements de nez",
+    "Lavez le nez au sérum physiologique. Pas de décongestionnant sans avis.",
+    null,
+    "Un humidificateur dans la chambre peut l'aider à mieux dormir."],
+  [14, 42, "Gencives qui saignent",
+    "Utilisez une brosse à dents souple. L'examen chez le dentiste est pris en charge dès le 4e mois.",
+    null,
+    "Rappelez-lui le rendez-vous chez le dentiste, pris en charge dès le 4e mois."],
+  [14, 24, "Tiraillements dans le bas du ventre",
+    "Les ligaments de l'utérus s'étirent : changez de position doucement et reposez-vous.",
+    "si la douleur est forte ou revient à intervalles réguliers.",
+    "Portez les charges lourdes et laissez-la se reposer quand ça tire."],
+  [20, 42, "Brûlures d'estomac",
+    "Faites de petits repas, pas trop gras ni épicés. Évitez de vous allonger juste après manger et surélevez la tête du lit.",
+    "si ça persiste : un traitement compatible avec la grossesse existe.",
+    "Surélevez la tête du lit (un coussin sous le matelas) et privilégiez des dîners légers et pas trop tardifs."],
+  [20, 42, "Mal de dos",
+    "Pliez les genoux pour porter, gardez le dos droit, essayez la natation ou le yoga prénatal. Un kiné ou un ostéopathe peut aider.",
+    "si la douleur est forte ou descend dans la jambe.",
+    "Portez les courses et les charges, et proposez un massage du bas du dos."],
+  [20, 42, "Crampes dans les jambes",
+    "Étirez le mollet en tirant la pointe du pied vers vous, et buvez suffisamment.",
+    null,
+    "En cas de crampe la nuit : jambe tendue, tirez doucement la pointe de son pied vers elle."],
+  [20, 42, "Vergetures, peau qui tire",
+    "Hydratez la peau du ventre, des seins et des hanches avec une crème neutre.",
+    "si ça démange fort, surtout sur les paumes et sous les pieds.",
+    "Proposez de lui passer la crème sur le ventre : c'est aussi un moment avec bébé."],
+  [24, 42, "Jambes lourdes, chevilles gonflées",
+    "Surélevez les jambes, évitez de rester debout longtemps et la chaleur, marchez. Des bas de contention peuvent être prescrits.",
+    "si le visage ou les mains gonflent d'un coup, surtout avec des maux de tête.",
+    "Prenez les tâches où il faut rester debout, et glissez un coussin sous ses jambes le soir."],
+  [28, 42, "Ventre qui durcit",
+    "Des contractions irrégulières et sans douleur sont normales : reposez-vous, elles passent.",
+    "si elles deviennent régulières ou douloureuses avant 37 SA.",
+    "Si ça devient régulier ou douloureux avant 37 SA, appelez la maternité sans attendre."],
+  [28, 38, "Essoufflement",
+    "L'utérus remonte sous les poumons : ralentissez et tenez-vous bien droite.",
+    "si c'est brutal ou avec une douleur dans la poitrine.",
+    "Ralentissez le rythme en balade et portez ce qui est lourd dans les escaliers."],
+  [28, 42, "Sommeil difficile",
+    "Dormez sur le côté, plutôt le gauche, avec un coussin entre les genoux.",
+    null,
+    "Un coussin de grossesse est un très bon cadeau."],
+  [28, 42, "Hémorroïdes",
+    "Évitez la constipation et ne forcez pas aux toilettes.",
+    "si elles font mal : un traitement local adapté existe.",
+    "Aidez-la à éviter la constipation : repas riches en fibres et marche quotidienne."],
+  [32, 42, "Fatigue du 3e trimestre",
+    "Bébé pèse lourd : reposez-vous dès que possible et faites des pauses.",
+    null,
+    "Bébé pèse lourd : prenez le relais à la maison et encouragez les pauses."],
+  [34, 42, "Envies fréquentes d'uriner",
+    "Bébé appuie sur la vessie : c'est normal. Continuez à boire.",
+    "en cas de brûlures ou de douleurs.",
+    "Pensez aux pauses en voiture, et laissez-lui le côté du lit le plus proche des toilettes."],
+];
+
+// Idées pour le papa : [de SA, jusqu'à SA (exclu), idée]
+const ASTUCES_PAPA = [
+  [4, 12,  "La fatigue et les nausées du début ne se voient pas, mais elles sont bien là. Prenez en main les courses, les repas et le ménage sans attendre qu'elle demande."],
+  [4, 14,  "Si vous pouvez, accompagnez-la à la 1re consultation. Notez les prochains rendez-vous dans votre agenda."],
+  [8, 14,  "C'est normal d'être partagé entre joie et inquiétude. Parlez-en avec elle, ou avec des amis déjà parents."],
+  [11, 15, "Venez à l'échographie du 1er trimestre : c'est souvent la première fois qu'on voit bébé bouger."],
+  [15, 21, "Vous pouvez participer à l'entretien prénatal précoce : c'est le moment de parler à deux de vos attentes et de vos inquiétudes."],
+  [15, 42, "Si vous êtes salarié, vous avez droit à une autorisation d'absence pour 3 des consultations prénatales obligatoires."],
+  [20, 25, "Venez à l'échographie du 2e trimestre : on voit très bien bébé, et vous pouvez connaître le sexe si vous le souhaitez."],
+  [23, 32, "Bébé commence à entendre : parlez-lui, chantez, lisez une histoire près du ventre. Il s'habitue à votre voix."],
+  [24, 32, "Posez la main sur le ventre quand bébé bouge : c'est souvent à cette période qu'on commence à le sentir de l'extérieur."],
+  [24, 32, "Pensez à l'organisation : chambre, poussette, siège auto, et le mode de garde (crèche, assistante maternelle) s'il n'est pas encore trouvé."],
+  [28, 34, "Prévenez votre employeur et posez les dates de votre congé de paternité."],
+  [28, 38, "Participez aux séances de préparation à la naissance : beaucoup sont ouvertes au second parent, et on y apprend à accompagner le travail."],
+  [32, 37, "Préparez la valise de maternité ensemble, et la vôtre aussi : chargeur, en-cas, papiers, de quoi payer le parking."],
+  [34, 38, "Faites le trajet jusqu'à la maternité une fois à blanc, si possible aux heures de pointe, et repérez où vous garer."],
+  [34, 42, "Installez le siège auto dans la voiture : il servira dès la sortie de la maternité."],
+  [36, 42, "Gardez le téléphone chargé et allumé, avec le numéro de la maternité sous la main."],
+  [37, 42, "Bébé peut arriver à tout moment. Pendant l'accouchement, votre rôle : rassurer, encourager, et faire le lien avec l'équipe."],
 ];
 
 // Signes d'alerte : [à partir de SA, signe]
@@ -375,12 +497,12 @@ $("dpa").textContent = "terme le " + date(TERME);
 $("dev").textContent = v[4];
 
 // Symptômes de la période (s borne la semaine entre 4 et 41)
-for (const [de, a, nom, conseil, consulter] of SYMPTOMES.filter(x => s >= x[0] && s < x[1])) {
-  const d = $("symptomes").appendChild(document.createElement("details"));
-  d.innerHTML = `<summary></summary><p></p>` + (consulter ? `<p class="consulter">Consultez ${consulter}</p>` : "");
-  d.firstChild.textContent = nom;
-  d.children[1].textContent = conseil;
-}
+// (textes écrits ici, pas saisis par l'utilisateur : innerHTML sans risque)
+const periode = liste => liste.filter(x => s >= x[0] && s < x[1]);
+$("symptomes").innerHTML = periode(SYMPTOMES).map(([, , nom, conseil, consulter, aide]) =>
+  `<details><summary>${nom}</summary><p class="pour-maman">${conseil}</p><p class="pour-papa"><b>Comment l'aider :</b> ${aide}</p>`
+  + (consulter ? `<p class="consulter">Consulter ${consulter}</p>` : "") + `</details>`).join("");
+$("astuces").innerHTML = periode(ASTUCES_PAPA).map(x => `<li>${x[2]}</li>`).join("");
 $("alertes").innerHTML = ALERTES.filter(x => sa >= x[0]).map(x => `<li>${x[1]}</li>`).join("");
 
 // Trimestres : 1er jusqu'à 15 SA, 2e jusqu'à 28 SA, 3e jusqu'au terme
@@ -422,6 +544,20 @@ for (const id of ["garcons", "filles"]) {
       if (!noms.length) ul.innerHTML = `<li class="vide">Pas encore d'idée…</li>`;
     });
 }
+
+// Profil maman / papa, retenu sur ce téléphone (choisi à la première ouverture)
+const PROFILS = { maman: "🤰 Maman", papa: "👨 Papa" };
+const profil = nom => {
+  document.body.dataset.profil = nom;
+  $("profil").textContent = PROFILS[nom];
+  $("choix").hidden = true;
+  try { localStorage.setItem("profil", nom); } catch {}
+};
+let enregistre = null;
+try { enregistre = localStorage.getItem("profil"); } catch {}
+if (PROFILS[enregistre]) profil(enregistre); else $("choix").hidden = false;
+$("profil").onclick = () => $("choix").hidden = false;
+document.querySelectorAll("[data-profil]").forEach(b => b.onclick = () => profil(b.dataset.profil));
 
 // Onglets (l'onglet ouvert est gardé dans l'adresse : #parcours, #prenoms)
 document.querySelectorAll(".rappel").forEach(p => p.textContent = `${sa} SA` + (j ? ` + ${j} j` : "") + ` · J-${reste}`);
